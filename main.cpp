@@ -11,17 +11,20 @@ int main(void)
 	for (int i = 0; i < 900000; ++i) {
 		in.push_back(1);
 	}*/
-	for (int i = 0; i < 100000; ++i) {
+	cout << "Input the size of test data: " << endl;
+	long long int n;
+	cin >> n;
+	for (int i = 0; i < n; ++i) {
 		in.push_back(rand() % 1000000);
 	}
 	OSort<int> s(in);
 	char sign;
-	cout << "Press 1 for selection sort, 2 for bubble sort, 3 for insertion sort, 4 for merge sort, 5 for quick sort, 6 for shell sort" << endl;
+	cout << "Press 1 for selection sort, 2 for bubble sort, 3 for insertion sort, 4 for merge sort, 5 for quick sort(intro), 6 for quick sort(non-recursive), 7 for quick sort(triple)" << endl;
 	cin >> sign;
 	auto start_time = clock();
 	sort(in.begin(), in.end());
 	auto end_time = clock();
-	cout << (double)(end_time - start_time) / CLOCKS_PER_SEC << endl;
+	cout << "STL sort() : " << (double)(end_time - start_time) / CLOCKS_PER_SEC << endl;
 	if (sign == '1') {
 		s.selection_sort();
 	}
@@ -35,10 +38,10 @@ int main(void)
 		s.merge_sort();
 	}
 	else if (sign == '5') {
-		s.quick_sort();
+		s.intro_sort();
 	}
 	else if (sign == '6') {
-		s.shell_sort();
+		s.quick_sort_stack();
 	}
 	else if (sign == '7') {
 		s.triple_quick_sort();
@@ -46,6 +49,7 @@ int main(void)
 	else if (sign == '8') {
 		s.heap_sort();
 	}
+	s.verify(n);
 	//s.show();
 
 	return 0;

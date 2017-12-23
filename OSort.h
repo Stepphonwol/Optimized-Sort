@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <ctime>
+#include <stack>
 #include <algorithm>
 
 using namespace std;
@@ -45,7 +46,7 @@ class OSort {
 			auto end_time = clock();
 			cout << "Total running time : " << (double)(end_time - start_time) / CLOCKS_PER_SEC << endl;
 		}
-		void quick_sort() {
+		void intro_sort() {
 			//unsigned long t;
 			//int n{ 1 };
 			//unsigned long per{ 10000000000 };
@@ -56,13 +57,26 @@ class OSort {
 			while (t--) {
 				random_shuffle(source.begin(), source.end());
 				auto start_time = clock();
-				int len = source.size();
-				quick_sort_help(0, source.size() - 1, len);
+				//int len = source.size();
+				int threshold = lg(2 * (source.size() - 0));
+				intro_sort_help(0, source.size() - 1, threshold);
 				auto end_time = clock();
 				sum += (double)(end_time - start_time) / CLOCKS_PER_SEC;
 			}
 			//t -= (unsigned long)GetCycleCount();
 			cout << "Total running time : " << sum / 10<< endl;
+		}
+		void quick_sort_stack() {
+			double sum{ 0 };
+			int t{ 10 };
+			while (t--) {
+				random_shuffle(source.begin(), source.end());
+				auto start_time = clock();
+				quick_sort_stack_help(0, source.size() - 1);
+				auto end_time = clock();
+				sum += (double)(end_time - start_time) / CLOCKS_PER_SEC;
+			}
+			cout << "Total running time : " << sum / 10 << endl;
 		}
 		void triple_quick_sort() {
 			auto start_time = clock();
@@ -83,6 +97,21 @@ class OSort {
 			}
 			//t -= (unsigned long)GetCycleCount();
 			cout << "Total running time : " << sum / 10 << endl;
+		}
+		void verify(long long n) {
+			long long i{ 0 };
+			for (auto it = source.begin(); it != source.end() - 1; ++it) {
+				if (!less(*it, *(it + 1)) && *it != *(it + 1)) {
+					cout << "Wrong sorting at index " << it - source.begin() << endl;
+					break;
+				}
+				//cout << *it << endl;
+				++i;
+			}
+			if (i == n - 1) {
+				cout << "All elements are in place." << endl
+					<< "No elements missing" << endl;
+			}
 		}
 	private:
 		vector<Type> source;
@@ -169,11 +198,11 @@ class OSort {
 		int partition(int lo, int hi) {
 			int i = lo, j = hi + 1;
 			int mid = lo + (hi - lo) / 2;
-			/*int p = med3(lo, hi, mid);
+			int p = med3(lo, hi, mid);
 			Type pivot = source[p];
-			swap(lo, p);*/
-			Type pivot = source[mid];
-			swap(lo, mid);
+			swap(lo, p);
+			//Type pivot = source[mid];
+			//swap(lo, mid);
 			while (true) {
 				while (less(source[++i], pivot)) {
 					if (i == hi) {
@@ -193,23 +222,42 @@ class OSort {
 			swap(j, lo);
 			return j;
 		}
-		void quick_sort_help(int lo, int hi, int &ideal) {
-			if (ideal <= 0 && hi - lo + 1 >= 30) {
-				heap_sort_help(lo, hi);
-				return;
-			}
-			if (hi <= lo + 5) {
+		void intro_sort_help(int lo, int hi, int threshold) {
+			//int threshold = lg(2 * (hi - lo + 1));
+			if (hi <= lo + 10) {
 				insertion_sort_help(lo, hi);
 				return;
 			}
-			/*if (hi <= lo) {
+			if (threshold <= 0) {
+				heap_sort_help(lo, hi);
 				return;
-			}*/
+			}
+			--threshold;
 			int j = partition(lo, hi);
-			ideal /= 2;
-			ideal += ideal / 2;
-			quick_sort_help(lo, j - 1, ideal);
-			quick_sort_help(j + 1, hi, ideal);
+			intro_sort_help(lo, j - 1, threshold);
+			intro_sort_help(j + 1, hi, threshold);
+		}
+		void quick_sort_stack_help(int lo, int hi) {
+			if (hi <= lo + 10) {
+				insertion_sort_help(lo, hi);
+				return;
+			}
+			stack<int> s;
+			s.push(lo);
+			s.push(hi);
+			while (!s.empty()) {
+				int r = s.top();
+				s.pop();
+				int l = s.top();
+				s.pop();
+				if (l < r) {
+					int pivot = partition(l, r);
+					s.push(l);
+					s.push(pivot - 1);
+					s.push(pivot + 1);
+					s.push(r);
+				}
+			}
 		}
 		void triple_help(int lo, int hi) {
 			/*if (hi <= lo + 5) {
@@ -241,13 +289,13 @@ class OSort {
 		}
 
 		int med3(int i, int j, int k) {
-			if ((i <= j && i >= k) || (i >= j && i <= k)) {
+			if ((source[i] <= source[j] && source[i] >= source[k]) || (source[i] >= source[j] && source[i] <= source[k])) {
 				return i;
 			}
-			if ((k <= i && k >= j) || (k >= i && k <= j)) {
+			else if ((source[k] <= source[i] && source[k] >= source[j]) || (source[k] >= source[i] && source[k] <= source[j])) {
 				return k;
 			}
-			if ((j <= i && j >= k) || (j >= i && j <= k)) {
+			else if ((source[j] <= source[i] && source[j] >= source[k]) || (source[j] >= source[i] && source[j] <= source[k])) {
 				return j;
 			}
 			/*if ((i - j) * (i - k) <= 0) {
@@ -262,27 +310,35 @@ class OSort {
 		}
 		void heap_sort_help(int lo, int hi) {
 			int n = hi - lo + 1;
-			for (int k = n / 2 - 1; k >= lo; --k) {
-				sink(k, n);
+			for (int k = n / 2 - 1; k >= 0; --k) {
+				sink(lo, k, n);
 			}
 			//--n;
-			while (n >= 1) {
-				swap(lo, --n);
-				sink(lo, n);
+			while (n > 1) {
+				swap(lo, hi--);
+				--n;
+				sink(lo, 0, n);
 			}
 		}
-		void sink(int k, int n) {
+		void sink(int lo, int k, int n) {
 			while (2 * k + 1 < n) {
-				int j = 2 * k + 1;
-				if (j < n - 1 && less(source[j], source[j + 1])) {
+				int j = 2 * k + 1 + lo; // left child of k
+				if (j < n - 1 + lo && less(source[j], source[j + 1])) {
 					++j;
 				}
-				if (!less(source[k], source[j])) {
+				if (!less(source[k + lo], source[j])) {
 					break;
 				}
-				swap(k, j);
-				k = j;
+				swap(k + lo, j);
+				k = j - lo;
 			}
+		}
+		int lg(int n) {
+			int k{ 0 };
+			for (k = 0; n > 1; n >>= 1) {
+				++k;
+			}
+			return k;
 		}
 		unsigned _int64 GetCycleCount() {
 			_asm _emit 0x0F
